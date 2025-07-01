@@ -42,8 +42,7 @@ const MovieDetail = () => {
 
   const endpoints = {
     vidsrc: `https://vidsrc.icu/embed/movie/${id}`,
-    Auto: `https://vidbinge.dev/embed/movie/${id}`,
-    multi: `https://player.autoembed.cc/embed/movie/${id}`,
+    superembed: `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
   };
 
   const formatRuntime = (minutes) => {
@@ -97,7 +96,7 @@ const MovieDetail = () => {
                     : "bg-gray-700 hover:bg-gray-600"
                 }`}
               >
-                {key.charAt(0).toUpperCase() + key.slice(1)}
+                {key === "2embed" ? "2Embed" : key.charAt(0).toUpperCase() + key.slice(1)}
               </button>
             ))}
           </div>

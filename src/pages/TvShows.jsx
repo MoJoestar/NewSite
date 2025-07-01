@@ -39,6 +39,12 @@ const PLATFORMS = {
     providerId: 337,
     endpoint: "discover",
   },
+  hbomax: {
+  name: "Max",
+  providerId: 384,
+  alternativeIds: [1899, 387],
+  endpoint: "discover",
+  },
   hulu: {
     name: "Hulu",
     providerId: 15,
@@ -69,6 +75,41 @@ const TVShows = () => {
   const [isTimeWindowDropdownOpen, setIsTimeWindowDropdownOpen] =
     useState(false);
   const navigate = useNavigate();
+
+  const fetchWithAlternativeProviders = async (platform, baseUrl, apiKey) => {
+  const ids = [platform.providerId, ...(platform.alternativeIds || [])];
+  for (const id of ids) {
+    for (const region of ['US', 'CA', 'GB']) {
+      try {
+        let url = 
+          `${baseUrl}/discover/tv?api_key=${apiKey}` +
+          `&with_watch_providers=${id}` +
+          `&watch_region=${region}` +
+          (selectedGenre ? `&with_genres=${selectedGenre}` : '') +
+          `&sort_by=popularity.desc&include_adult=false&page=1`;
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const { results } = await res.json();
+        if (results.length) return results;
+      } catch (e) { /* ignore */ }
+    }
+  }
+  // fallback: HBO/Max companies
+  try {
+    const url = 
+      `${baseUrl}/discover/tv?api_key=${apiKey}` +
+      `&with_companies=174,128064,3268` +
+      `&sort_by=popularity.desc&page=1`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const { results } = await res.json();
+      return results;
+    }
+  } catch {}
+  return [];
+};
+
+
 
   useEffect(() => {
     const fetchTVShows = async () => {
@@ -101,7 +142,23 @@ const TVShows = () => {
           }
 
           if (platform.endpoint === "discover") {
-            url += "&sort_by=popularity.desc&include_adult=false&page=1";
+            if (activeSection === "hbomax") {
+    const results = await fetchWithAlternativeProviders(platform, baseUrl, apiKey);
+    setTVShows(results);
+    setLoading(false);
+    return;
+  }
+  // normal discover flow for other platforms
+  let url = 
+    `${baseUrl}/discover/tv?api_key=${apiKey}` +
+    `&with_watch_providers=${platform.providerId}` +
+    `&watch_region=US` +
+    (selectedGenre ? `&with_genres=${selectedGenre}` : '') +
+    `&sort_by=popularity.desc&include_adult=false&page=1`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to fetch TV shows");
+  const data = await response.json();
+  setTVShows(data.results);
           }
         }
 

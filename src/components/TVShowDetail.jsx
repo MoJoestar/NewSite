@@ -72,8 +72,7 @@ const TVShowDetail = () => {
 
   const endpoints = {
     vidsrc: `https://vidsrc.icu/embed/tv/${id}/${currentSeason}/${currentEpisode}`,
-    Auto: `https://vidbinge.dev/embed/tv/${id}/${currentSeason}/${currentEpisode}`,
-    multi: `https://player.autoembed.cc/embed/tv/${id}/${currentSeason}/${currentEpisode}`,
+    superembed: `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${currentSeason}&e=${currentEpisode}`,
   };
 
   const handleSeasonChange = (season) => {
@@ -124,6 +123,7 @@ const TVShowDetail = () => {
             <iframe
               src={endpoints[selectedEndpoint]}
               className="absolute top-0 left-0 w-full h-full"
+              allow="autoplay; encrypted-media"
               allowFullScreen
               title={tvShow.name}
             />

@@ -16,8 +16,8 @@ const Footer = () => {
       title: "Contact Us",
       items: [
         {
-          name: "contact@aadilinamdar27.me",
-          href: "mailto:contact@aadilinamdar27.me",
+          name: "m.sallam0488@gmail.com",
+          href: "mailto:m.sallam0488@gmail.com",
         },
       ],
     },
@@ -90,9 +90,9 @@ const Footer = () => {
         >
           <div className="flex space-x-6 mb-4 md:mb-0">
             {[
-              { icon: Github, link: "https://github.com/SnoozeScript" },
-              { icon: Twitter, link: "https://twitter.com/snoozescript" },
-              { icon: Instagram, link: "https://instagram.com/snoozescript" },
+              { icon: Github, link: "https://github.com/MoJoestar" },
+              //{ icon: Twitter, link: "https://twitter.com/snoozescript" },
+              { icon: Instagram, link: "https://www.instagram.com/mo.magdy48/" },
             ].map((social, index) => (
               <motion.a
                 key={index}
@@ -114,12 +114,12 @@ const Footer = () => {
           >
             Crafted by{" "}
             <a
-              href="https://github.com/SnoozeScript"
+              href="https://github.com/MoJoestar"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent font-semibold"
             >
-              SnoozeScript 💤
+              Mo Sallam
             </a>
           </motion.div>
         </motion.div>

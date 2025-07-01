@@ -49,6 +49,13 @@ const PLATFORMS = {
     providerId: 15,
     endpoint: "discover",
   },
+  // Try multiple HBO Max/Max provider IDs
+  hbomax: {
+    name: "Max",
+    providerId: 384, // Primary HBO Max ID
+    alternativeIds: [1899, 387], // Alternative IDs to try
+    endpoint: "discover",
+  },
   paramount: {
     name: "Paramount+",
     providerId: 531,
@@ -75,6 +82,60 @@ const Movies = () => {
     useState(false);
   const navigate = useNavigate();
 
+  // Function to try fetching with alternative provider IDs
+  const fetchWithAlternativeProviders = async (platform, baseUrl, apiKey) => {
+    const providerIds = [platform.providerId, ...(platform.alternativeIds || [])];
+    
+    for (const providerId of providerIds) {
+      try {
+        let url = `${baseUrl}/discover/movie?api_key=${apiKey}&with_watch_providers=${providerId}`;
+        
+        // Try different regions
+        const regions = ['US', 'CA', 'GB'];
+        
+        for (const region of regions) {
+          const regionalUrl = `${url}&watch_region=${region}`;
+          
+          if (selectedGenre) {
+            regionalUrl += `&with_genres=${selectedGenre}`;
+          }
+          
+          const finalUrl = regionalUrl + "&sort_by=popularity.desc&include_adult=false&page=1";
+          
+          console.log(`Trying HBO Max with provider ID ${providerId} in region ${region}:`, finalUrl);
+          
+          const response = await fetch(finalUrl);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.results && data.results.length > 0) {
+              console.log(`Success! Found ${data.results.length} movies with provider ID ${providerId} in ${region}`);
+              return data.results;
+            }
+          }
+        }
+      } catch (error) {
+        console.log(`Failed with provider ID ${providerId}:`, error);
+        continue;
+      }
+    }
+    
+    // If all provider IDs fail, try a different approach - search for HBO/Max content
+    try {
+      console.log("Trying fallback search for HBO content...");
+      const fallbackUrl = `${baseUrl}/discover/movie?api_key=${apiKey}&with_companies=174,128064,3268&sort_by=popularity.desc&page=1`;
+      const response = await fetch(fallbackUrl);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Fallback search found ${data.results?.length || 0} movies`);
+        return data.results || [];
+      }
+    } catch (error) {
+      console.log("Fallback search also failed:", error);
+    }
+    
+    return [];
+  };
+
   useEffect(() => {
     const fetchMovies = async () => {
       try {
@@ -90,32 +151,49 @@ const Movies = () => {
           url = `${baseUrl}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(
             query
           )}`;
+          
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error("Failed to fetch movies");
+          }
+          const data = await response.json();
+          setMovies(data.results);
         } else {
           const platform = PLATFORMS[activeSection];
 
           if (platform.endpoint === "trending") {
             url = `${baseUrl}/trending/movie/${timeWindow}?api_key=${apiKey}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error("Failed to fetch movies");
+            }
+            const data = await response.json();
+            setMovies(data.results);
           } else if (platform.endpoint === "discover") {
-            url = `${baseUrl}/discover/movie?api_key=${apiKey}&with_watch_providers=${platform.providerId}&watch_region=US`;
-          } else {
-            url = `${baseUrl}/movie/${platform.endpoint}?api_key=${apiKey}`;
-          }
+            // Special handling for HBO Max/Max
+            if (activeSection === "hbomax") {
+              const results = await fetchWithAlternativeProviders(platform, baseUrl, apiKey);
+              setMovies(results);
+            } else {
+              // Regular platform handling
+              url = `${baseUrl}/discover/movie?api_key=${apiKey}&with_watch_providers=${platform.providerId}&watch_region=US`;
 
-          if (selectedGenre && platform.endpoint !== "trending") {
-            url += `&with_genres=${selectedGenre}`;
-          }
+              if (selectedGenre) {
+                url += `&with_genres=${selectedGenre}`;
+              }
 
-          if (platform.endpoint === "discover") {
-            url += "&sort_by=popularity.desc&include_adult=false&page=1";
+              url += "&sort_by=popularity.desc&include_adult=false&page=1";
+
+              const response = await fetch(url);
+              if (!response.ok) {
+                throw new Error("Failed to fetch movies");
+              }
+              const data = await response.json();
+              setMovies(data.results);
+            }
           }
         }
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error("Failed to fetch movies");
-        }
-        const data = await response.json();
-        setMovies(data.results);
       } catch (error) {
         console.error("Error fetching movies:", error);
         setError(error.message);
@@ -307,7 +385,17 @@ const Movies = () => {
         </motion.div>
       ) : (
         <div className="text-center text-gray-400 mt-8">
-          No movies found. Try adjusting your filters or search term.
+          {activeSection === "hbomax" ? (
+            <div>
+              <p>No Max content found with the current filters.</p>
+              <p className="text-sm mt-2">
+                This might be due to regional restrictions or API changes.
+                Check the browser console for debugging information.
+              </p>
+            </div>
+          ) : (
+            "No movies found. Try adjusting your filters or search term."
+          )}
         </div>
       )}
     </div>

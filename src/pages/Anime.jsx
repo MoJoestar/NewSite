@@ -15,7 +15,8 @@ const Anime = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Get all search parameters with defaults
-  const query = searchParams.get("search") || "Naruto";
+  // No forced “Naruto” – default to blank so it shows Popular/Trending
+  const query = searchParams.get("search") || "naruto";
   const genre = searchParams.get("genre") || "";
   const page = parseInt(searchParams.get("page") || "1");
   const sort = searchParams.get("sort") || "POPULARITY_DESC";
@@ -24,34 +25,48 @@ const Anime = () => {
   const format = searchParams.get("format") || "";
 
   useEffect(() => {
-    const fetchAnime = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchAnime = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const response = await searchAnime({
-          query,
-          genre,
-          page,
-          perPage: ITEMS_PER_PAGE,
-          sort,
-          season,
-          year,
-          format,
-        });
+      // If no search query, fetch popular anime differently
+      const searchParams = query 
+        ? {
+            query,
+            genre,
+            page,
+            perPage: ITEMS_PER_PAGE,
+            sort,
+            season,
+            year,
+            format,
+          }
+        : {
+            // For popular anime, don't include query parameter
+            genre,
+            page,
+            perPage: ITEMS_PER_PAGE,
+            sort: sort || "POPULARITY_DESC", // Ensure we have a sort for popular content
+            season,
+            year,
+            format,
+          };
 
-        setAnimeList(response.media);
-        setTotalPages(Math.ceil(response.pageInfo.total / ITEMS_PER_PAGE));
-      } catch (error) {
-        console.error("Error fetching anime:", error);
-        setError("Failed to fetch anime. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const response = await searchAnime(searchParams);
 
-    fetchAnime();
-  }, [searchParams]);
+      setAnimeList(response.media);
+      setTotalPages(Math.ceil(response.pageInfo.total / ITEMS_PER_PAGE));
+    } catch (error) {
+      console.error("Error fetching anime:", error);
+      setError("Failed to fetch anime. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAnime();
+}, [searchParams]);
 
   const handleFilterChange = (filterType, value) => {
     setSearchParams((prev) => {
